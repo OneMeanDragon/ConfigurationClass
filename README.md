@@ -19,7 +19,6 @@ void ConfigMessage(MessageTypes MessageType, const char sMessageOut[])
             break;
         }
     }
-    //std::cout << speedtime.count() << "ms.\r\n";
 }
 
 int main() {
