@@ -23,6 +23,20 @@ void ConfigMessage(MessageTypes MessageType, const char sMessageOut[])
 
 int main() {
     Config myConfig(*ConfigMessage);
+	Config myConfig(*ConfigMessage);
+	std::string outVal, outVal1, outVal2;
+	myConfig.GetLastSeen("AstroX", outVal);
+	myConfig.GetLastSeen("AstroX2", outVal1);
+	myConfig.GetLastSeen("AstroX3", outVal2);
+	myConfig.SetLastSeen("AstroX"); //Saves time(now) to the config
+
+	if (outVal == "") //note were looking at original AstroX data
+	{
+		std::cout << "AstroX: has not been seen until now." << std::endl;
+	} 
+	else {
+		std::cout << "AstroX: was last seen " << outVal.c_str() << " ago." << std::endl;
+	}
 
     system("pause");
 
