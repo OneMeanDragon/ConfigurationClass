@@ -4,7 +4,7 @@
 #include <fstream>
 
 #include <stdio.h>
-
+#include <time.h>
 
 #include "Config.h"
 
@@ -21,7 +21,7 @@ bool Config::ConfigExists()
 	return true;
 }
 
-//need to create the folder since the stream writers do not....
+//need to create the folder since the stream writers do not.... (pretty sure they used to on XP and lower)
 bool Config::CreateConfig()
 {
 	FILE *fp;
@@ -138,6 +138,7 @@ void Config::GetString(const char key_search[], std::string &string_out, const c
 {
 	std::string tDefVal = "";
 	if (default_value == NULL || strlen(default_value) == 0) { tDefVal = "Nothing"; }
+	else { tDefVal = std::string(default_value); }
 	get_value_from_file(key_search, string_out, tDefVal.c_str());
 }
 
@@ -146,6 +147,7 @@ void Config::GetInteger32(const char key_search[], UINT32 &Int_out, const char d
 	std::string temp_string = "";
 	std::string tDefVal = "";
 	if (default_value == NULL || strlen(default_value) == 0) { tDefVal = "0"; }
+	else { tDefVal = std::string(default_value); }
 	get_value_from_file(key_search, temp_string, tDefVal.c_str());
 	Int_out = (UINT32)(GetINTfromString(temp_string.c_str(), temp_string.length()) & 0xFFFFFFFF);
 }
@@ -155,6 +157,7 @@ void Config::GetHexInt32(const char key_search[], UINT32 &Int_out, const char de
 	std::string temp_string = "";
 	std::string tDefVal = "";
 	if (default_value == NULL || strlen(default_value) == 0) { tDefVal = "00000000"; }
+	else { tDefVal = std::string(default_value); }
 	get_value_from_file(key_search, temp_string, tDefVal.c_str());
 	Int_out = GetHEXINTfromString(temp_string.c_str(), temp_string.length());
 }
@@ -233,4 +236,128 @@ UINT64 Config::GetINTfromString(const char inBuf[], size_t inBufLen)
 	}
 
 	return outValue;
+}
+
+/*
+lastseen value stored as time_t
+
+	time_t time_value_now;
+	time(&time_value_now);
+	time_t config_lastseen_time;
+
+	Format to more likeable data (time_value_now - config_lastseen_time)
+*/
+void Config::GetLastSeen(const char user[], std::string &out_value)
+{
+	time_t tNow;
+	time(&tNow);
+	std::string default_value = std::to_string(tNow);
+	std::string temp_key = std::string(user);
+	temp_key += std::string(LASTSEEN);
+	std::string temp_value;
+
+	GetString(temp_key.c_str(), temp_value, default_value.c_str());
+	//now format actual_value and put in out_value
+	TIME_PASSED tpData = do_time_passed(tNow - GetINTfromString(temp_value.c_str(), temp_value.length()));
+	asc_time_passed(tpData, out_value);
+}
+
+time_t Config::long_math_time_passed(time_t value)
+{
+	time_t time_value_now;
+	time(&time_value_now);
+	return time_value_now - value;
+}
+
+TIME_PASSED Config::do_time_passed(time_t in_value)
+{
+	time_t value = in_value;
+	TIME_PASSED outValues;
+	outValues.years = (int)(value / tpYEARS);
+	if (outValues.years >= 1) { value -= outValues.years * tpYEARS; }
+	outValues.months = (int)(value / tpMONTHS);
+	if (outValues.months >= 1) { value -= outValues.months * tpMONTHS; }
+	outValues.weeks = (int)(value / tpWEEKS);
+	if (outValues.weeks >= 1) { value -= outValues.weeks * tpWEEKS; }
+	outValues.days = (int)(value / tpDAYS);
+	if (outValues.days >= 1) { value -= outValues.days * tpDAYS; }
+	outValues.hours = (int)(value / tpHOURS);
+	if (outValues.hours >= 1) { value -= outValues.hours * tpHOURS; }
+	outValues.minutes = (int)(value / tpMINS);
+	if (outValues.minutes >= 1) { value -= outValues.minutes * tpMINS; }
+	outValues.seconds = (int)(value);
+
+	return outValues;
+}
+
+std::string Config::more_than_one_day_etc(int value)
+{
+	if (value > 1) { return "s"; }
+	return "";
+}
+
+void Config::asc_time_passed(TIME_PASSED values, std::string &outBuf)
+{
+	char outYears[32] = "";
+	if (values.years >= 1) {
+		sprintf_s(outYears, "%i year%s", values.years, more_than_one_day_etc(values.years).c_str());
+	}
+	char outMonths[32] = "";
+	if (values.months >= 1) {
+		if (strlen(outYears) > 0) {
+			sprintf_s(outMonths, ", %i month%s", values.months, more_than_one_day_etc(values.months).c_str());
+		}
+		else {
+			sprintf_s(outMonths, "%i month%s", values.months, more_than_one_day_etc(values.months).c_str());
+		}
+	}
+	char outWeeks[32] = "";
+	if (values.weeks >= 1) {
+		if (strlen(outYears) > 0 || strlen(outMonths) > 0) {
+			sprintf_s(outWeeks, ", %i week%s", values.weeks, more_than_one_day_etc(values.weeks).c_str());
+		}
+		else {
+			sprintf_s(outWeeks, "%i week%s", values.weeks, more_than_one_day_etc(values.weeks).c_str());
+		}
+	}
+	char outDays[32] = "";
+	if (values.days >= 1) {
+		if (strlen(outYears) > 0 || strlen(outMonths) > 0 || strlen(outWeeks) > 0) {
+			sprintf_s(outDays, ", %i day%s", values.days, more_than_one_day_etc(values.days).c_str());
+		}
+		else {
+			sprintf_s(outDays, "%i day%s", values.days, more_than_one_day_etc(values.days).c_str());
+		}
+	}
+	char outHours[32] = "";
+	if (values.hours >= 1) {
+		if (strlen(outYears) > 0 || strlen(outMonths) > 0 || strlen(outWeeks) > 0 || strlen(outDays) > 0) {
+			sprintf_s(outHours, ", %i hour%s", values.hours, more_than_one_day_etc(values.hours).c_str());
+		}
+		else {
+			sprintf_s(outHours, "%i hour%s", values.hours, more_than_one_day_etc(values.hours).c_str());
+		}
+	}
+	char outMins[32] = "";
+	if (values.minutes >= 1) {
+		if (strlen(outYears) > 0 || strlen(outMonths) > 0 || strlen(outWeeks) > 0 || strlen(outDays) > 0 || strlen(outHours) > 0) {
+			sprintf_s(outMins, ", %i minute%s", values.minutes, more_than_one_day_etc(values.minutes).c_str());
+		}
+		else {
+			sprintf_s(outMins, "%i minute%s", values.minutes, more_than_one_day_etc(values.minutes).c_str());
+		}
+	}
+	char outSecs[32] = "";
+	if (values.seconds >= 1) {
+		if (strlen(outYears) > 0 || strlen(outMonths) > 0 || strlen(outWeeks) > 0 || strlen(outDays) > 0 || strlen(outHours) > 0 || strlen(outMins) > 0) {
+			sprintf_s(outSecs, ", %i second%s", values.seconds, more_than_one_day_etc(values.seconds).c_str());
+		}
+		else {
+			sprintf_s(outSecs, "%i second%s", values.seconds, more_than_one_day_etc(values.seconds).c_str());
+		}
+	}
+	char outBuffer[512];
+	sprintf_s(outBuffer, "%s%s%s%s%s%s%s\x0", outYears, outMonths, outWeeks, outDays, outHours, outMins, outSecs);
+	outBuf = std::string(outBuffer);
+	return;
 }

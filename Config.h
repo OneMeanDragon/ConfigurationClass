@@ -1,17 +1,17 @@
 #pragma once
 
-#define CONFIG_F "DATA\\CONFIG.CFG"
+#define CONFIG_F "DATA\\DRAGONBOT.CFG"
 
 //			Create Default Folder if non existant	[done]
-//			Create Config file if non existant	[done] -> the above was needed before this.
-//			Dump file contents into std string	[done] --> both the above needed before this.
-//			Create function to get value by key	[done]
-//			Create function to add line to file	[done] -> this works with the above, via default_value 
+//			Create Config file if non existant		[done] -> the above was needed before this.
+//			Dump file contents into std string		[done] --> both the above needed before this.
+//			Create function to get value by key		[done]
+//			Create function to add line to file		[done] -> this works with the above, via default_value 
 //															  (if said key is missing this will save the key 
 //															   with a value set in the default)
-//			Get string from key	              [done] -v
-//			Get Integer from key              [done] -> by default if you dont provide a default value one will be set for you.
-//			Get Hex integer from key	      [done] -^	v
+//			Get string from key						[done] -v
+//			Get Integer from key					[done] -> by default if you dont provide a default value one will be set for you.
+//			Get Hex integer from key				[done] -^	v
 //																The 3 main get function default values can be set as "" or NULL 
 //																to enforce the defaults.
 
@@ -19,6 +19,24 @@ enum MessageTypes
 {
 	Error = 1, Warning = 2, Good = 3
 };
+
+struct TIME_PASSED {
+	int years;
+	int months;
+	int weeks;
+	int days;
+	int hours;
+	int minutes;
+	int seconds;
+};
+
+#define tpYEARS (tpMONTHS * 12)
+#define tpMONTHS (tpWEEKS * 4)
+#define tpWEEKS (tpDAYS * 7)
+#define tpDAYS (tpHOURS * 24)
+#define tpHOURS (tpMINS * 60)
+#define tpMINS 60
+#define LASTSEEN "_LASTSEEN="
 
 class Config
 {
@@ -42,6 +60,12 @@ public: //methods
 	void GetString(const char key_search[], std::string &string_out, const char default_value[]);
 	void GetInteger32(const char key_search[], UINT32 &Int_out, const char default_value[]);
 	void GetHexInt32(const char key_search[], UINT32 &Int_out, const char default_value[]);
+	void GetLastSeen(const char user[], std::string &out_value);
+
+	time_t long_math_time_passed(time_t value);
+	TIME_PASSED do_time_passed(time_t in_value);
+	std::string more_than_one_day_etc(int value);
+	void asc_time_passed(TIME_PASSED values, std::string &outbuf);
 
 public: //typedefs
 	//Message out optional.
