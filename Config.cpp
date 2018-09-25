@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <string>
+#include <sstream>
 #include <iostream>
 #include <fstream>
 
@@ -85,7 +86,7 @@ void Config::add_line_to_file(const char key_value[], const char default_value[]
 {
 	FILE *fs;
 	fopen_s(&fs, m_configfile.c_str(), "at");
-	fprintf(fs, "%s%s\r\n", key_value, default_value);
+	fprintf(fs, "%s%s", key_value, default_value);
 	fclose(fs);
 	//add this new data to the internal file buffer so were not reloading the file again.
 	m_filedata += std::string(key_value);
@@ -98,7 +99,7 @@ int Config::get_value_from_file(const char key_search[], std::string &string_out
 	if (!ConfigExists()) {
 		if (!CreateConfig())
 		{
-			return -1; //if it gets we could not create the config, and it didnt exist in the firstplace, or is open by another application.
+			return -1; //if it gets here we could not create the config, and it didnt exist in the firstplace, or is open by another application, or [folder dosent exist (should not happen see: constructors)].
 		}
 	}
 	
@@ -258,7 +259,7 @@ void Config::GetLastSeen(const char user[], std::string &out_value)
 
 	GetString(temp_key.c_str(), temp_value, default_value.c_str());
 	//now format actual_value and put in out_value
-	TIME_PASSED tpData = do_time_passed(tNow - GetINTfromString(temp_value.c_str(), temp_value.length()));
+	TIME_PASSED tpData = do_time_passed(long_math_time_passed(GetINTfromString(temp_value.c_str(), temp_value.length())));
 	asc_time_passed(tpData, out_value);
 }
 
@@ -356,8 +357,72 @@ void Config::asc_time_passed(TIME_PASSED values, std::string &outBuf)
 			sprintf_s(outSecs, "%i second%s", values.seconds, more_than_one_day_etc(values.seconds).c_str());
 		}
 	}
-	char outBuffer[512];
+	char outBuffer[128]; //(70)"x years, xx months, x weeks, x days, xx hours, xx minutes, xx seconds(null)"
 	sprintf_s(outBuffer, "%s%s%s%s%s%s%s\x0", outYears, outMonths, outWeeks, outDays, outHours, outMins, outSecs);
 	outBuf = std::string(outBuffer);
 	return;
+}
+
+void Config::SetLastSeen(const char user[])
+{
+	time_t tNow;
+	time(&tNow); //new time value we want to add
+
+	std::string s_NewLineValue = "";
+	s_NewLineValue = std::string(user);
+	s_NewLineValue += LASTSEEN;
+	//we need to find the line the above key is on
+	std::string str_out;
+	int my_index = get_value_from_file(s_NewLineValue.c_str(), str_out, "");
+	s_NewLineValue += std::to_string(tNow);
+	delete_line_in_file(my_index, s_NewLineValue);
+}
+
+void Config::delete_line_in_file(int line_number, std::string replace_value)
+{
+	std::istringstream temp_buffer(m_filedata);
+	std::string buffer = "";
+	std::string line = "";
+	UINT32 i_Index = 0;
+	int i_CR = 0;
+	while (std::getline(temp_buffer, line))
+	{
+		i_CR = line.find("\r", 1); //Windows GetLine will still return "\r" in the string.
+		if (i_CR) {
+			line = line.substr(0, i_CR);
+		} //else linex = linex.
+		
+		if (i_Index == line_number)
+		{
+			if (replace_value == "") {
+				//if the value is empty skip this.
+			}
+			else {
+				buffer += replace_value;
+				buffer += "\r\n";
+			}
+		}
+		else {
+			if (line.size() > 0) {
+				buffer += line;
+				buffer += "\r\n";
+			}
+		}
+		i_Index++;
+	}
+	//send buffer to be saved.
+	m_filedata = buffer;
+	Save();
+
+	return;
+}
+
+void Config::Save()
+{
+	FILE *stream;
+	fopen_s(&stream, m_configfile.c_str(), "wt");
+	if (stream) {
+		fprintf(stream, "%s", m_filedata.c_str());
+	}
+	fclose(stream);
 }

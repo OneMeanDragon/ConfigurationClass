@@ -53,6 +53,8 @@ private: //methods
 	int get_value_from_file(const char key_search[], std::string &string_out, const char default_value[]);
 	UINT32 GetHEXINTfromString(const char inBuf[], size_t inBufLen);
 	UINT64 GetINTfromString(const char inBuf[], size_t inBufLen);
+	void delete_line_in_file(int line_number, std::string replace_value);
+	void Save();
 
 public: //methods
 	bool CreateFolder(const char folder_path[]);
@@ -61,6 +63,11 @@ public: //methods
 	void GetInteger32(const char key_search[], UINT32 &Int_out, const char default_value[]);
 	void GetHexInt32(const char key_search[], UINT32 &Int_out, const char default_value[]);
 	void GetLastSeen(const char user[], std::string &out_value);
+
+	void SetInteger32(const char key_search[], UINT32 dwValue);		//convert integer to string
+	//void SetHexInt32(const char key_search[], UINT32 dwValue);	//convert int to hex string
+	void SetString(const char key_search[], const char strValue[]);	//obvious
+	void SetLastSeen(const char user[]);							//if this gets called we already know what time it is.
 
 	time_t long_math_time_passed(time_t value);
 	TIME_PASSED do_time_passed(time_t in_value);
