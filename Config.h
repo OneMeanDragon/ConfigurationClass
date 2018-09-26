@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <stdio.h>
 #include <time.h>
@@ -77,7 +78,7 @@ public: //methods
 	void GetLastSeen(const char user[], std::string &out_value);
 
 	void SetInteger32(const char key_search[], UINT32 dwValue);		//convert integer to string
-	//void SetHexInt32(const char key_search[], UINT32 dwValue);	//convert int to hex string
+	void SetHexInt32(const char key_search[], UINT32 dwValue);	//convert int to hex string
 	void SetString(const char key_search[], const char strValue[]);	//obvious
 	void SetLastSeen(const char user[]);							//if this gets called we already know what time it is.
 
