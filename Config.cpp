@@ -1,16 +1,8 @@
-#include <windows.h>
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <fstream>
-
-#include <stdio.h>
-#include <time.h>
-
 #include "Config.h"
 
 bool Config::ConfigExists()
 {
+	SCrit.enter();
 	//Does this file exist?
 	FILE *fp;
 	errno_t err;
@@ -19,12 +11,14 @@ bool Config::ConfigExists()
 		return false;
 	}
 	err=fclose(fp);
+	SCrit.leave();
 	return true;
 }
 
 //need to create the folder since the stream writers do not.... (pretty sure they used to on XP and lower)
 bool Config::CreateConfig()
 {
+	SCrit.enter();
 	FILE *fp;
 	errno_t err;
 	err = fopen_s(&fp, m_configfile.c_str(), "a");
@@ -34,12 +28,15 @@ bool Config::CreateConfig()
 	}
 	fprintf(fp, "%s", "");
 	err = fclose(fp);
+	SCrit.leave();
 	return true;
 }
 
 //Load file data into std::string
 bool Config::LoadStringData()
 {
+	SCrit.enter();
+
 	FILE *fs;
 	errno_t err;
 	err = fopen_s(&fs, m_configfile.c_str(), "rb");
@@ -65,11 +62,15 @@ bool Config::LoadStringData()
 	}
 	m_filedata = std::string(fsBuffer);
 	delete[] fsBuffer;
+
+	SCrit.leave();
 	return true;
 }
 
 bool Config::CreateFolder(const char folder_path[])
 {
+	SCrit.enter();
+
 	bool created = CreateDirectory(folder_path, NULL); //windows.h
 	if (!created)
 	{
@@ -79,23 +80,31 @@ bool Config::CreateFolder(const char folder_path[])
 		}
 		return false; //else we could not create this folder for (reasons)
 	}
+
+	SCrit.leave();
 	return true;
 }
 
 void Config::add_line_to_file(const char key_value[], const char default_value[])
 {
+	SCrit.enter();
+
 	FILE *fs;
 	fopen_s(&fs, m_configfile.c_str(), "at");
-	fprintf(fs, "%s%s", key_value, default_value);
+	fprintf(fs, "%s%s\r\n", key_value, default_value);
 	fclose(fs);
 	//add this new data to the internal file buffer so were not reloading the file again.
 	m_filedata += std::string(key_value);
 	m_filedata += std::string(default_value);
 	m_filedata += "\r\n";
+
+	SCrit.leave();
 }
 
 int Config::get_value_from_file(const char key_search[], std::string &string_out, const char default_value[])
 {
+	SCrit.enter();
+
 	if (!ConfigExists()) {
 		if (!CreateConfig())
 		{
@@ -124,6 +133,8 @@ int Config::get_value_from_file(const char key_search[], std::string &string_out
 		token1 = strtok_s(NULL, "\r\n", &nexttoken);
 		index_value++;
 	}
+	SCrit.leave();
+
 	//if the value is missing add it to the file, and our current buffer.
 	if (!value_was_found) {
 		sprintf_s(found_value, "%s", default_value); //because we didnt find it we need to copy it
@@ -132,6 +143,7 @@ int Config::get_value_from_file(const char key_search[], std::string &string_out
 	}
 
 	string_out = std::string(found_value);
+
 	return index_value;
 }
 
@@ -259,8 +271,10 @@ void Config::GetLastSeen(const char user[], std::string &out_value)
 
 	GetString(temp_key.c_str(), temp_value, default_value.c_str());
 	//now format actual_value and put in out_value
+	SCrit.enter();
 	TIME_PASSED tpData = do_time_passed(long_math_time_passed(GetINTfromString(temp_value.c_str(), temp_value.length())));
 	asc_time_passed(tpData, out_value);
+	SCrit.leave();
 }
 
 time_t Config::long_math_time_passed(time_t value)
@@ -372,14 +386,25 @@ void Config::SetLastSeen(const char user[])
 	s_NewLineValue = std::string(user);
 	s_NewLineValue += LASTSEEN;
 	//we need to find the line the above key is on
-	std::string str_out;
+	std::string str_out = "";
 	int my_index = get_value_from_file(s_NewLineValue.c_str(), str_out, "");
 	s_NewLineValue += std::to_string(tNow);
 	delete_line_in_file(my_index, s_NewLineValue);
 }
 
+void Config::SetString(const char key_search[], const char strValue[])
+{
+	std::string str_out = "";
+	std::string s_NewLineValue = "";
+	s_NewLineValue = std::string(key_search);
+	int my_index = get_value_from_file(key_search, str_out, strValue);
+	s_NewLineValue += std::string(strValue);
+	delete_line_in_file(my_index, s_NewLineValue);
+}
+
 void Config::delete_line_in_file(int line_number, std::string replace_value)
 {
+	SCrit.enter();
 	std::istringstream temp_buffer(m_filedata);
 	std::string buffer = "";
 	std::string line = "";
@@ -387,7 +412,7 @@ void Config::delete_line_in_file(int line_number, std::string replace_value)
 	int i_CR = 0;
 	while (std::getline(temp_buffer, line))
 	{
-		i_CR = line.find("\r", 1); //Windows GetLine will still return "\r" in the string.
+		i_CR = (int)line.find("\r", 1); //Windows GetLine will still return "\r" in the string.
 		if (i_CR) {
 			line = line.substr(0, i_CR);
 		} //else linex = linex.
@@ -412,6 +437,7 @@ void Config::delete_line_in_file(int line_number, std::string replace_value)
 	}
 	//send buffer to be saved.
 	m_filedata = buffer;
+	SCrit.leave();
 	Save();
 
 	return;
@@ -419,10 +445,12 @@ void Config::delete_line_in_file(int line_number, std::string replace_value)
 
 void Config::Save()
 {
+	SCrit.enter();
 	FILE *stream;
 	fopen_s(&stream, m_configfile.c_str(), "wt");
 	if (stream) {
 		fprintf(stream, "%s", m_filedata.c_str());
 	}
 	fclose(stream);
+	SCrit.leave();
 }
