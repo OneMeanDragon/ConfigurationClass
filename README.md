@@ -29,6 +29,7 @@ int main() {
 	myConfig.GetLastSeen("AstroX2", outVal1);
 	myConfig.GetLastSeen("AstroX3", outVal2);
 	myConfig.SetLastSeen("AstroX"); //Saves time(now) to the config
+	myConfig.SetString("TestStringSet=", "4321");
 
 	if (outVal == "") //note were looking at original AstroX data
 	{
