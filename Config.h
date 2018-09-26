@@ -1,5 +1,15 @@
 #pragma once
 
+#include <windows.h>
+#include <string>
+#include <sstream>
+#include <iostream>
+#include <fstream>
+#include <stdio.h>
+#include <time.h>
+
+#include "sCritSect.h"
+
 #define CONFIG_F "DATA\\DRAGONBOT.CFG"
 
 //			Create Default Folder if non existant	[done]
@@ -42,6 +52,8 @@ class Config
 {
 private:
 	//vars
+	SCritSect SCrit; //Critical section
+
 	std::string m_configfile;
 	std::string m_filedata;
 
