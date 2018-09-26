@@ -23,8 +23,13 @@
 //			Get string from key						[done] -v
 //			Get Integer from key					[done] -> by default if you dont provide a default value one will be set for you.
 //			Get Hex integer from key				[done] -^	v
-//																The 3 main get function default values can be set as "" or NULL 
+//			Get Last Seen [user]					[done]		The 3 main get function default values can be set as "" or NULL 
 //																to enforce the defaults.
+//			
+//			Set string at key						[done]
+//			Set hex at key							[done]
+//			Set integer at key						[done]
+//			Set last seen [user]					[done]
 
 enum MessageTypes
 {
