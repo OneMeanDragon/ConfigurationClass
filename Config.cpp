@@ -385,9 +385,11 @@ void Config::SetLastSeen(const char user[])
 	std::string s_NewLineValue = "";
 	s_NewLineValue = std::string(user);
 	s_NewLineValue += LASTSEEN;
-	//we need to find the line the above key is on
+	//we need to find the line that the above key is on
 	std::string str_out = "";
-	int my_index = get_value_from_file(s_NewLineValue.c_str(), str_out, "");
+	int my_index = get_value_from_file(s_NewLineValue.c_str(), str_out, std::to_string(tNow).c_str());
+	//check if str_out = std::to_string(tNow)
+	//if it does it already saved dont force another save.
 	s_NewLineValue += std::to_string(tNow);
 	delete_line_in_file(my_index, s_NewLineValue);
 }
@@ -398,6 +400,8 @@ void Config::SetString(const char key_search[], const char strValue[])
 	std::string s_NewLineValue = "";
 	s_NewLineValue = std::string(key_search);
 	int my_index = get_value_from_file(key_search, str_out, strValue);
+	//check if str_out = std::string(strValue)
+	//if it does, it already saved dont force another save.
 	s_NewLineValue += std::string(strValue);
 	delete_line_in_file(my_index, s_NewLineValue);
 }
@@ -414,7 +418,13 @@ void Config::delete_line_in_file(int line_number, std::string replace_value)
 	{
 		i_CR = (int)line.find("\r", 1); //Windows GetLine will still return "\r" in the string.
 		if (i_CR) {
-			line = line.substr(0, i_CR);
+			if (i_CR == 1)
+			{
+				line = ""; //Remove the empty line carrage return.
+			}
+			else {
+				line = line.substr(0, i_CR);
+			}
 		} //else linex = linex.
 		
 		if (i_Index == line_number)
@@ -428,7 +438,7 @@ void Config::delete_line_in_file(int line_number, std::string replace_value)
 			}
 		}
 		else {
-			if (line.size() > 0) {
+			if (line.length() > 0) {
 				buffer += line;
 				buffer += "\r\n";
 			}
