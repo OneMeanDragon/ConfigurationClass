@@ -388,8 +388,7 @@ void Config::SetLastSeen(const char user[])
 	//we need to find the line that the above key is on
 	std::string str_out = "";
 	int my_index = get_value_from_file(s_NewLineValue.c_str(), str_out, std::to_string(tNow).c_str());
-	//check if str_out = std::to_string(tNow)
-	//if it does it already saved dont force another save.
+	if (str_out == std::to_string(tNow)) { return; } //inital value didnt exist so it got added via function above.
 	s_NewLineValue += std::to_string(tNow);
 	delete_line_in_file(my_index, s_NewLineValue);
 }
@@ -398,11 +397,29 @@ void Config::SetString(const char key_search[], const char strValue[])
 {
 	std::string str_out = "";
 	std::string s_NewLineValue = "";
+	std::string s_valueIn = std::string(strValue);
 	s_NewLineValue = std::string(key_search);
-	int my_index = get_value_from_file(key_search, str_out, strValue);
-	//check if str_out = std::string(strValue)
-	//if it does, it already saved dont force another save.
-	s_NewLineValue += std::string(strValue);
+	//s_NewLineValue += "=";
+	int my_index = get_value_from_file(s_NewLineValue.c_str(), str_out, s_valueIn.c_str());
+	if (str_out == s_valueIn) { return; } //inital value didnt exist so it got added via function above.
+	s_NewLineValue += s_valueIn;
+	delete_line_in_file(my_index, s_NewLineValue);
+}
+
+void Config::SetHexInt32(const char key_search[], UINT32 dwValue)
+{
+	//convert value to hex
+	std::stringstream ss_Stream;
+	ss_Stream << std::right << std::setfill('0') << std::setw(8) << std::hex << dwValue;
+	std::string value(ss_Stream.str());
+	//Set the value in the config
+	std::string str_out = "";
+	std::string s_NewLineValue = "";
+	s_NewLineValue = std::string(key_search);
+	//s_NewLineValue += "=";
+	int my_index = get_value_from_file(s_NewLineValue.c_str(), str_out, value.c_str());
+	if (str_out == value) { return; } //inital value didnt exist so it got added via function above. [and or it already existed in the config as this value]
+	s_NewLineValue += value;
 	delete_line_in_file(my_index, s_NewLineValue);
 }
 
