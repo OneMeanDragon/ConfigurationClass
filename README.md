@@ -30,6 +30,8 @@ int main() {
 	myConfig.GetLastSeen("AstroX3", outVal2);
 	myConfig.SetLastSeen("AstroX"); //Saves time(now) to the config
 	myConfig.SetString("TestStringSet=", "4321");
+	myConfig.SetHexInt32("TestHexString=", 0x01020304);
+	myConfig.SetInteger32("TestIntegerString=", 12345678);
 
 	if (outVal == "") //note were looking at original AstroX data
 	{
