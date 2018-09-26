@@ -423,6 +423,17 @@ void Config::SetHexInt32(const char key_search[], UINT32 dwValue)
 	delete_line_in_file(my_index, s_NewLineValue);
 }
 
+void Config::SetInteger32(const char key_search[], UINT32 dwValue)
+{
+	std::string str_out = "";
+	std::string s_dwValue = std::to_string(dwValue);
+	std::string s_NewKeyLine = std::string(key_search);
+	int my_index = get_value_from_file(s_NewKeyLine.c_str(), str_out, s_dwValue.c_str());
+	if (str_out == s_dwValue) { return; } //inital value didnt exist so it got added via function above. [and or it already existed in the config as this value]
+	s_NewKeyLine += s_dwValue;
+	delete_line_in_file(my_index, s_NewKeyLine);
+}
+
 void Config::delete_line_in_file(int line_number, std::string replace_value)
 {
 	SCrit.enter();
